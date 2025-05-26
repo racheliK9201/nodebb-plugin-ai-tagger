@@ -1,5 +1,5 @@
 {
-  "name": "nodebb-plugin-quickstart",
+  "name": "nodebb-plugin-ai-tagger",
   "version": "0.4.3",
   "description": "A starter kit for quickly creating NodeBB plugins",
   "main": "library.js",
@@ -10,7 +10,7 @@
   "keywords": [
     "nodebb",
     "plugin",
-    "quickstart",
+    "ai-tagger",
     "shell"
   ],
   "husky": {
