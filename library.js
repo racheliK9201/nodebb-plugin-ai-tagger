@@ -37,6 +37,27 @@ plugin.init = async (params) => {
 	});
 
 	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/ai-tagger', controllers.renderAdminPage);
+
+	// Add this route to serve the API key
+	router.get('/api/ai-tagger/key', (req, res) => {
+		winston.info('[plugins/ai-tagger] Serving OpenAI API key', process.env.OPENAI_API_KEY);
+		res.json({ apiKey: process.env.OPENAI_API_KEY || '' });
+	});
+
+	router.post('/api/ai-tagger/summarize', async (req, res) => {
+		const { text } = req.body;
+
+		if (!text) {
+			return res.status(400).json({ error: 'No text provided' });
+		}
+
+		// Here you would add the logic to call the OpenAI API and summarize the text
+		// For now, we'll just return a dummy response
+
+		res.json({
+			summary: `Summary of the provided text: "${text.substring(0, 50)}..."`,
+		});
+	});
 };
 
 /**
@@ -74,6 +95,10 @@ plugin.addRoutes = async ({ router, middleware, helpers }) => {
 		helpers.formatApiResponse(200, res, {
 			foobar: req.params.param1,
 		});
+	});
+
+	router.get('/api/ai-tagger/key', (req, res) => {
+		res.json({ apiKey: process.env.OPENAI_API_KEY || '' });
 	});
 };
 
