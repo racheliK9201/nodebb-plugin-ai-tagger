@@ -1,5 +1,5 @@
 {
-	"id": "nodebb-plugin-quickstart",
+	"id": "nodebb-plugin-ai-tagger",
 	"url": "https://github.com/NodeBB/nodebb-plugin-quickstart",
 	"library": "./library.js",
 	"hooks": [
@@ -11,17 +11,18 @@
 		"static": "./static"
 	},
 	"scss": [
-		"scss/quickstart.scss"
+		"scss/ai-tagger.scss"
 	],
 	"scripts": [
-		"public/lib/main.js"
+		"public/lib/main.js",
+		"public/lib/ai-tagger.js"
 	],
 	"acpScripts": [
 		"public/lib/acp-main.js"
 	],
 	"modules": {
-		"../client/quickstart.js": "./public/lib/quickstart.js",
-		"../admin/plugins/quickstart.js": "./public/lib/admin.js"
+		"../client/ai-tagger.js": "./public/lib/ai-tagger.js",
+		"../admin/plugins/ai-tagger.js": "./public/lib/admin.js"
 	},
 	"templates": "templates"
 }
