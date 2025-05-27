@@ -1,1 +1,43 @@
-/* Place any SASS in here */
+.ai-tagger-btn {
+    margin-left: 4px;
+    display: inline-block;
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    height: 38px;
+    width: 38px;
+    min-width: unset;
+    min-height: unset;
+    vertical-align: middle;
+    box-shadow: none;
+    position: relative;
+    cursor: pointer;
+}
+
+.ai-tagger-btn-icon {
+    vertical-align: middle;
+    width: 20px;
+    height: 20px;
+}
+
+.ai-tagger-btn-text {
+    display: none;
+    margin-left: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    background: #fff;
+    color: #222;
+    border-radius: 4px;
+    padding: 2px 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    position: absolute;
+    z-index: 1000;
+    left: 110%;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.ai-tagger-btn-text-visible {
+    display: inline-block;
+}

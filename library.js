@@ -12,8 +12,6 @@ const routeHelpers = require.main.require('./src/routes/helpers');
 const plugin = {};
 
 plugin.init = async (params) => {
-	console.log('✅ My plugin is loaded and running');
-
 	const { router /* , middleware , controllers */ } = params;
 
 	// Settings saved in the plugin settings can be retrieved via settings methods
@@ -40,76 +38,6 @@ plugin.init = async (params) => {
 
 	// Add this route to serve the API key
 	router.get('/api/ai-tagger/key', (req, res) => {
-		winston.info('[plugins/ai-tagger] Serving OpenAI API key', process.env.OPENAI_API_KEY);
-		res.json({ apiKey: process.env.OPENAI_API_KEY || '' });
-	});
-
-	router.post('/api/ai-tagger/summarize', async (req, res) => {
-		const { text } = req.body;
-
-		if (!text) {
-			return res.status(400).json({ error: 'No text provided' });
-		}
-
-		// Here you would add the logic to call the OpenAI API and summarize the text
-		// For now, we'll just return a dummy response
-
-		res.json({
-			summary: `Summary of the provided text: "${text.substring(0, 50)}..."`,
-		});
-	});
-};
-
-/**
- * If you wish to add routes to NodeBB's RESTful API, listen to the `static:api.routes` hook.
- * Define your routes similarly to above, and allow core to handle the response via the
- * built-in helpers.formatApiResponse() method.
- *
- * In this example route, the `ensureLoggedIn` middleware is added, which means a valid login
- * session or bearer token (which you can create via ACP > Settings > API Access) needs to be
- * passed in.
- *
- * To call this example route:
- *   curl -X GET \
- * 		http://example.org/api/v3/plugins/quickstart/test \
- * 		-H "Authorization: Bearer some_valid_bearer_token"
- *
- * Will yield the following response JSON:
- * 	{
- *		"status": {
- *			"code": "ok",
- *			"message": "OK"
- *		},
- *		"response": {
- *			"foobar": "test"
- *		}
- *	}
- */
-plugin.addRoutes = async ({ router, middleware, helpers }) => {
-	const middlewares = [
-		middleware.ensureLoggedIn,			// use this if you want only registered users to call this route
-		// middleware.admin.checkPrivileges,	// use this to restrict the route to administrators
-	];
-
-	routeHelpers.setupApiRoute(router, 'get', '/ai-tagger/:param1', middlewares, (req, res) => {
-		helpers.formatApiResponse(200, res, {
-			foobar: req.params.param1,
-		});
-	});
-
-	router.get('/api/ai-tagger/key', (req, res) => {
 		res.json({ apiKey: process.env.OPENAI_API_KEY || '' });
 	});
 };
-
-plugin.addAdminNavigation = (header) => {
-	header.plugins.push({
-		route: '/plugins/ai-tagger',
-		icon: 'fa-tint',
-		name: 'AI tagger',
-	});
-
-	return header;
-};
-
-module.exports = plugin;
