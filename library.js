@@ -41,3 +41,5 @@ plugin.init = async (params) => {
 		res.json({ apiKey: process.env.OPENAI_API_KEY || '' });
 	});
 };
+
+module.exports = plugin;
