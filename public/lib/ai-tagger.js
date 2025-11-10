@@ -195,11 +195,22 @@
             const contentBox = document.querySelector(SELECTORS.CONTENT_AREA);
             if (!contentBox) return;
 
-            const text = contentBox.value.trim();
-            if (!text) return;
+            // Try to get the post title as well
+            let title = '';
+            // NodeBB composer title input is usually .composer input.title or similar
+            const titleBox = document.querySelector('.composer input.title, .composer [name="title"], .composer input[data-title]');
+            if (titleBox && titleBox.value) {
+                title = titleBox.value.trim();
+            }
 
+            const text = contentBox.value.trim();
+            if (!text && !title) return;
+
+            // Combine title and content for tag generation
+            const combined = title && text ? (title + '\n' + text) : (title || text);
+            console.log('[AI Tagger] Generating tags for content:', combined);
             try {
-                const tags = await generateTags(text, btn);
+                const tags = await generateTags(combined, btn);
                 const currentTagInput = findTagInput(document.querySelector(SELECTORS.COMPOSER_TAGS));
                 applyTagsToInput(currentTagInput, tags);
             } catch (err) {

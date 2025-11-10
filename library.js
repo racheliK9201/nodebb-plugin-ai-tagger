@@ -8,7 +8,7 @@ const controllers = require('./lib/controllers');
 
 const routeHelpers = require.main.require('./src/routes/helpers');
 
-const DEFAULT_PROMPT = 'You are a tags generator for post that should be indexed using the tags. Take the post and create between 1 to 3 tags that represents the content of the post. Each tag must be 3-15 characters long. Do not use general finance terms, be as specific as possible. Return only the tags with no other prefix, suffix or anything else. Each tag may have more that one word. use comma to separate between tags.';
+const DEFAULT_PROMPT = 'You are a tags generator for post that should be indexed using the tags. Take the post and create between 1 to 3 tags that represents the content of the post. Each tag must be 3-15 characters long. Return only the tags with no other prefix, suffix or anything else. Each tag may have more that one word. use comma to separate between tags.';
 
 const plugin = {
     settings: {
