@@ -59,18 +59,6 @@
         };
 
         btn.onclick = async function () {
-            // Fetch the API key from the server
-            let apiKey = '';
-            try {
-                const keyRes = await fetch('/api/ai-tagger/key');
-                const keyData = await keyRes.json();
-                // console.log('[AI Tagger] Fetched API key from server:', keyData);
-                apiKey = keyData.apiKey || '';
-            } catch (e) {
-                console.error('[AI Tagger] Could not fetch API key from server');
-                return;
-            }
-
             var contentBox = document.querySelector('.composer textarea.write, .composer [data-write] textarea, .composer textarea');
             if (!contentBox) {
                 // Fallback: try to find any textarea in composer
@@ -84,46 +72,32 @@
                 return;
             }
 
-            // Send the text to OpenAI to summarize
-            // console.log('[AI Tagger] Sending content to OpenAI for tag generation:', text);
-            let summary = '';
+            // Send the text to server for tag generation
+            console.log('[AI Tagger] Sending content to server for tag generation');
+            let tags = [];
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                const response = await fetch('/api/ai-tagger/generate', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + apiKey
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
-                        messages: [
-                            { role: 'system', content: 'You are a tags generator for post that should be indexed using the tags. Take the post and create between 1 to 3 tags that represents the content of the post. Each tag must be at least 3 characters long. Do not use general finance terms, be as specific as possible. Return only the tags with no other prefix, suffix or anything else. Each tag may have more that one word. use comma to separate between tags.' },
-                            { role: 'user', content: "Post: " + text }
-                        ],
-                        max_tokens: 32,
-                        temperature: 1
-                    })
+                    body: JSON.stringify({ text })
                 });
                 const data = await response.json();
-                // console.log('[AI Tagger] OpenAI response:', data);
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate tags');
+                }
 
-                summary = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
-                    ? data.choices[0].message.content.trim()
-                    : '';
-                // console.log('[AI Tagger] Summary from OpenAI:', summary);
+                console.log('[AI Tagger] Server response:', data);
+                tags = data.tags || [];
             } catch (err) {
-                console.error('[AI Tagger] Error calling OpenAI API:', err);
-                // Fallback: use original text if API fails
-                summary = text;
+                console.error('[AI Tagger] Error generating tags:', err);
+                app.alerts.error('Failed to generate tags: ' + err.message);
+                return;
             }
 
-            // Use the summary's first 5 words as tags
-            var tags = summary.split(",").map(function (word) {
-                // Allow Hebrew (U+0590–U+05FF), English letters, numbers, hyphens, underscores, and spaces
-                return word.replace(/[^\w\u0590-\u05FF\- ]/g, '').toLowerCase().trim();
-            }).filter(Boolean);
-
-            // console.log('[AI Tagger] Generated tags:', tags);
+            console.log('[AI Tagger] Generated tags:', tags);
 
             tagInput = document.getElementsByClassName("tags-container")[0]
                 .getElementsByClassName("bootstrap-tagsinput")[0]

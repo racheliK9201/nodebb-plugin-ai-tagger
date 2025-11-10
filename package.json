@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-ai-tagger",
-  "version": "0.6.1",
+  "version": "0.6.4",
   "description": "NodeBB plugin that uses AI to tag posts",
   "author": "RacheliB",
   "main": "library.js",
