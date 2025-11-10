@@ -64,7 +64,7 @@
             try {
                 const keyRes = await fetch('/api/ai-tagger/key');
                 const keyData = await keyRes.json();
-                console.log('[AI Tagger] Fetched API key from server:', keyData);
+                // console.log('[AI Tagger] Fetched API key from server:', keyData);
                 apiKey = keyData.apiKey || '';
             } catch (e) {
                 console.error('[AI Tagger] Could not fetch API key from server');
@@ -85,7 +85,7 @@
             }
 
             // Send the text to OpenAI to summarize
-            console.log('[AI Tagger] Sending content to OpenAI for tag generation:', text);
+            // console.log('[AI Tagger] Sending content to OpenAI for tag generation:', text);
             let summary = '';
             try {
                 const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -105,12 +105,12 @@
                     })
                 });
                 const data = await response.json();
-                console.log('[AI Tagger] OpenAI response:', data);
+                // console.log('[AI Tagger] OpenAI response:', data);
 
                 summary = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
                     ? data.choices[0].message.content.trim()
                     : '';
-                console.log('[AI Tagger] Summary from OpenAI:', summary);
+                // console.log('[AI Tagger] Summary from OpenAI:', summary);
             } catch (err) {
                 console.error('[AI Tagger] Error calling OpenAI API:', err);
                 // Fallback: use original text if API fails
@@ -123,7 +123,7 @@
                 return word.replace(/[^\w\u0590-\u05FF\- ]/g, '').toLowerCase().trim();
             }).filter(Boolean);
 
-            console.log('[AI Tagger] Generated tags:', tags);
+            // console.log('[AI Tagger] Generated tags:', tags);
 
             tagInput = document.getElementsByClassName("tags-container")[0]
                 .getElementsByClassName("bootstrap-tagsinput")[0]

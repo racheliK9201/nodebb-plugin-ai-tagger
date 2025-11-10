@@ -4,15 +4,13 @@
         <div class="form-group">
             <label class="col-sm-2 control-label" for="ai-tagger-api-key">API Key</label>
             <div class="col-sm-10">
-                <input type="password" class="form-control" id="ai-tagger-api-key" name="apiKey" placeholder="Enter your API key" />
-                <p class="help-block">Your API key for the AI service</p>
+                <input type="text" class="form-control" id="ai-tagger-api-key" name="apiKey" />
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-2 control-label" for="ai-tagger-custom-prompt">Custom Prompt</label>
+            <label class="col-sm-2 control-label" for="ai-tagger-threshold">Tagging Threshold</label>
             <div class="col-sm-10">
-                <textarea class="form-control" id="ai-tagger-custom-prompt" name="customPrompt" rows="4" placeholder="Enter your custom prompt for tag generation"></textarea>
-                <p class="help-block">Custom prompt to guide the AI in generating tags</p>
+                <input type="number" class="form-control" id="ai-tagger-threshold" name="threshold" min="0" max="1" step="0.01" />
             </div>
         </div>
         <div class="form-group">

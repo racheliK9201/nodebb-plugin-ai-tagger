@@ -4,7 +4,6 @@ const nconf = require.main.require('nconf');
 const winston = require.main.require('winston');
 
 const meta = require.main.require('./src/meta');
-
 const controllers = require('./lib/controllers');
 
 const routeHelpers = require.main.require('./src/routes/helpers');
@@ -12,34 +11,46 @@ const routeHelpers = require.main.require('./src/routes/helpers');
 const plugin = {};
 
 plugin.init = async (params) => {
-	const { router /* , middleware , controllers */ } = params;
+	const { router, middleware } = params;
 
-	// Settings saved in the plugin settings can be retrieved via settings methods
-	const { setting1, setting2 } = await meta.settings.get('ai-tagger');
-	if (setting1) {
-		console.log(setting2);
-	}
+	// Load existing settings
+	const settings = await meta.settings.get('ai-tagger');
+	plugin.settings = Object.assign({
+		apiKey: '',
+		customPrompt: 'Please suggest relevant tags for this content:',
+	}, settings);
 
-	/**
-	 * We create two routes for every view. One API call, and the actual route itself.
-	 * Use the `setupPageRoute` helper and NodeBB will take care of everything for you.
-	 *
-	 * Other helpers include `setupAdminPageRoute` and `setupAPIRoute`
-	 * */
-	routeHelpers.setupPageRoute(router, '/ai-tagger', [(req, res, next) => {
-		winston.info(`[plugins/ai-tagger] In middleware. This argument can be either a single middleware or an array of middlewares`);
-		setImmediate(next);
-	}], (req, res) => {
-		winston.info(`[plugins/ai-tagger] Navigated to ${nconf.get('relative_path')}/ai-tagger`);
-		res.render('ai-tagger', { uid: req.uid });
+	// Setup Admin Page Route
+	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/ai-tagger', middleware.admin.buildHeader, controllers.renderAdminPage);
+	routeHelpers.setupAdminPageRoute(router, '/api/admin/plugins/ai-tagger', [], controllers.renderAdminPage);
+
+	// Setup API Route for fetching API key
+	// router.get('/api/ai-tagger/key', [], controllers.getApiKey);
+	
+	router.get('/api/ai-tagger/key', [], controllers.getApiKey);
+
+	// Socket listeners for admin settings
+	const SocketAdmin = require.main.require('./src/socket.io/admin');
+	SocketAdmin.settings.saveAITaggerSettings = async function (socket, data) {
+		await meta.settings.set('ai-tagger', {
+			apiKey: data.apiKey,
+			customPrompt: data.customPrompt
+		});
+		plugin.settings = await meta.settings.get('ai-tagger');
+	};
+
+	SocketAdmin.settings.getAITaggerSettings = async function (socket, data) {
+		return await meta.settings.get('ai-tagger');
+	};
+};
+
+plugin.addAdminNavigation = function (header) {
+	header.plugins.push({
+		route: '/plugins/ai-tagger',
+		icon: 'fa-tags',
+		name: 'AI Tagger'
 	});
-
-	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/ai-tagger', controllers.renderAdminPage);
-
-	// Add this route to serve the API key
-	router.get('/api/ai-tagger/key', (req, res) => {
-		res.json({ apiKey: process.env.OPENAI_API_KEY || '' });
-	});
+	return header;
 };
 
 module.exports = plugin;

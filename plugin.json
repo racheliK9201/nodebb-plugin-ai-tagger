@@ -4,7 +4,6 @@
 	"library": "./library.js",
 	"hooks": [
 		{ "hook": "static:app.load", "method": "init" },
-		{ "hook": "static:api.routes", "method": "addRoutes" },
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" }
 	],
 	"staticDirs": {
@@ -18,11 +17,7 @@
 		"public/lib/ai-tagger.js"
 	],
 	"acpScripts": [
-		"public/lib/acp-main.js"
+		"public/lib/admin.js"
 	],
-	"modules": {
-		"../client/ai-tagger.js": "./public/lib/ai-tagger.js",
-		"../admin/plugins/ai-tagger.js": "./public/lib/admin.js"
-	},
 	"templates": "templates"
 }
