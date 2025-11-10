@@ -4,40 +4,91 @@ const nconf = require.main.require('nconf');
 const winston = require.main.require('winston');
 
 const meta = require.main.require('./src/meta');
-
 const controllers = require('./lib/controllers');
 
 const routeHelpers = require.main.require('./src/routes/helpers');
 
-const plugin = {};
+const DEFAULT_PROMPT = 'You are a tags generator for post that should be indexed using the tags. Take the post and create between 1 to 3 tags that represents the content of the post. Each tag must be 3-15 characters long. Do not use general finance terms, be as specific as possible. Return only the tags with no other prefix, suffix or anything else. Each tag may have more that one word. use comma to separate between tags.';
+
+const plugin = {
+    settings: {
+        apiKey: '',
+        customPrompt: DEFAULT_PROMPT
+    }
+};
+
+// Add admin scripts and styles
+plugin.addAdminScripts = async () => {
+    return [
+        'admin/plugins/ai-tagger.js'
+    ];
+};
 
 plugin.init = async (params) => {
-	const { router /* , middleware , controllers */ } = params;
+	const { router, middleware } = params;
 
-	// Settings saved in the plugin settings can be retrieved via settings methods
-	const { setting1, setting2 } = await meta.settings.get('ai-tagger');
-	if (setting1) {
-		console.log(setting2);
-	}
+	// Load existing settings
+	const settings = await meta.settings.get('ai-tagger');
+	plugin.settings = Object.assign({
+		apiKey: '',
+		customPrompt: DEFAULT_PROMPT,
+	}, settings);
 
-	/**
-	 * We create two routes for every view. One API call, and the actual route itself.
-	 * Use the `setupPageRoute` helper and NodeBB will take care of everything for you.
-	 *
-	 * Other helpers include `setupAdminPageRoute` and `setupAPIRoute`
-	 * */
-	routeHelpers.setupPageRoute(router, '/ai-tagger', [(req, res, next) => {
-		winston.info(`[plugins/ai-tagger] In middleware. This argument can be either a single middleware or an array of middlewares`);
-		setImmediate(next);
-	}], (req, res) => {
-		winston.info(`[plugins/ai-tagger] Navigated to ${nconf.get('relative_path')}/ai-tagger`);
-		res.render('ai-tagger', { uid: req.uid });
-	});
+	// Setup Admin Page Route
+	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/ai-tagger', middleware.admin.buildHeader, controllers.renderAdminPage);
+	routeHelpers.setupAdminPageRoute(router, '/api/admin/plugins/ai-tagger', [], controllers.renderAdminPage);
 
-	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/ai-tagger', controllers.renderAdminPage);
+	// Setup API Route for tag generation
+	router.post('/api/ai-tagger/generate', [], controllers.generateTags);
 
-	// Add this route to serve the API key
-	router.get('/api/ai-tagger/key', (req, res) => {
-		res.json({ apiKey: process.env.OPENAI_API_KEY || '' });
-	});
+	// Socket listeners for admin settings
+	const SocketAdmin = require.main.require('./src/socket.io/admin');
+	
+	// Handler for getting settings
+	SocketAdmin.settings.getAITaggerSettings = async function (socket, data) {
+		try {
+			winston.verbose('[ai-tagger] Attempting to retrieve settings');
+			const settings = await meta.settings.get('ai-tagger');
+			winston.info('[ai-tagger] Settings retrieved:', settings);
+			return settings || plugin.settings;
+		} catch (err) {
+			winston.error('[ai-tagger] Error getting settings:', err);
+			throw err;
+		}
+	};
+
+	// Handler for setting settings
+	SocketAdmin.settings.saveAITaggerSettings = async function (socket, data) {
+		try {
+			winston.info('[ai-tagger] Attempting to save settings:', {
+				hasApiKey: !!data.apiKey,
+				hasCustomPrompt: !!data.customPrompt
+			});
+
+			const settings = {
+				apiKey: data.apiKey || '',
+				customPrompt: data.customPrompt || DEFAULT_PROMPT
+			};
+
+			await meta.settings.set('ai-tagger', settings);
+			plugin.settings = await meta.settings.get('ai-tagger');
+			
+			winston.info('[ai-tagger] Settings saved successfully');
+			return { success: true };
+		} catch (err) {
+			winston.error('[ai-tagger] Error saving settings:', err);
+			throw err;
+		}
+	};
 };
+
+plugin.addAdminNavigation = function (header) {
+	header.plugins.push({
+		route: '/plugins/ai-tagger',
+		icon: 'fa-tags',
+		name: 'AI Tagger'
+	});
+	return header;
+};
+
+module.exports = plugin;
