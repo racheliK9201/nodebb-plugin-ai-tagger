@@ -1,142 +1,246 @@
-// This script adds a button to the tags section of the new post composer in NodeBB
-// When clicked, it generates tags from the first words of the post content
+/**
+ * AI Tagger Plugin for NodeBB
+ * 
+ * This script enhances the NodeBB composer by adding an AI-powered tag generation button.
+ * When clicked, it sends the post content to the server for intelligent tag generation
+ * using AI algorithms.
+ * 
+ * @module ai-tagger
+ */
 
 (function () {
-    /**
-     * Adds an "Auto-generate tags" button to the NodeBB composer interface.
-     * 
-     * The button, when clicked, extracts the first 5 words from the post content,
-     * sanitizes them, and inserts them as tags into the tag input field.
-     * 
-     * The function ensures the button is only added once and only if the tag input is present.
-     * It also dispatches an input event to notify any listeners of the tag input change.
-     */
-    function addAutoTagButton() {
-        // Find the composer tags input area using a more reliable selector
-        var composerTags = document.querySelector('.composer .tags-input, .composer [data-tag-input], .composer .tags, .composer-tags');
-        if (!composerTags) {
-            return;
-        }
-        if (document.getElementById('ai-generate-tags')) {
-            return;
-        }
-        // Try to find a suitable place to insert the button
-        var tagInput;
-        try {
-            tagInput = document.getElementsByClassName("tags-container")[0]
-                .getElementsByClassName("bootstrap-tagsinput")[0]
-                .getElementsByTagName("input")[0];
-        } catch (e) {
-            tagInput = composerTags.querySelector('input[type="text"], input, textarea');
-            if (!tagInput) {
-                tagInput = document.querySelector('.composer input[data-tag-input], .composer input.tags-input, .composer input[type="text"]');
-            }
-        }
-        if (!tagInput) {
-            return;
-        }
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'ai-generate-tags';
-        btn.className = 'ai-tagger-btn';
+    // Constants for DOM selectors and configuration
+    const SELECTORS = {
+        COMPOSER_TAGS: '.composer .tags-input, .composer [data-tag-input], .composer .tags, .composer-tags',
+        CONTENT_AREA: '.composer textarea.write, .composer [data-write] textarea, .composer textarea',
+        TAGS_CONTAINER: '.tags-container',
+        BOOTSTRAP_TAGS_INPUT: '.bootstrap-tagsinput',
+        TAG_ROW: '.tag-row'
+        };
 
-        // Use SVG icon and hover text
-        btn.innerHTML = `
+    const CONFIG = {
+        BUTTON_ID: 'ai-generate-tags',
+        BUTTON_CLASS: 'ai-tagger-btn',
+        API_ENDPOINT: '/api/ai-tagger/generate'
+    };
+
+    // HTML templates
+    const TEMPLATES = {
+        BUTTON_CONTENT: `
             <svg class="ai-tagger-btn-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
-                <path fill="#2196f3" d="M23.426,31.911l-1.719,3.936c-0.661,1.513-2.754,1.513-3.415,0l-1.719-3.936	c-1.529-3.503-4.282-6.291-7.716-7.815l-4.73-2.1c-1.504-0.668-1.504-2.855,0-3.523l4.583-2.034	c3.522-1.563,6.324-4.455,7.827-8.077l1.741-4.195c0.646-1.557,2.797-1.557,3.443,0l1.741,4.195	c1.503,3.622,4.305,6.514,7.827,8.077l4.583,2.034c1.504,0.668,1.504,2.855,0,3.523l-4.73,2.1	C27.708,25.62,24.955,28.409,23.426,31.911z"></path>
-                <path fill="#7e57c2" d="M38.423,43.248l-0.493,1.131c-0.361,0.828-1.507,0.828-1.868,0l-0.493-1.131	c-0.879-2.016-2.464-3.621-4.44-4.5l-1.52-0.675c-0.822-0.365-0.822-1.56,0-1.925l1.435-0.638c2.027-0.901,3.64-2.565,4.504-4.65	l0.507-1.222c0.353-0.852,1.531-0.852,1.884,0l0.507,1.222c0.864,2.085,2.477,3.749,4.504,4.65l1.435,0.638	c0.822,0.365,0.822,1.56,0,1.925l-1.52,0.675C40.887,39.627,39.303,41.232,38.423,43.248z"></path>
+                <path fill="#2196f3" d="M23.426,31.911l-1.719,3.936c-0.661,1.513-2.754,1.513-3.415,0l-1.719-3.936 c-1.529-3.503-4.282-6.291-7.716-7.815l-4.73-2.1c-1.504-0.668-1.504-2.855,0-3.523l4.583-2.034 c3.522-1.563,6.324-4.455,7.827-8.077l1.741-4.195c0.646-1.557,2.797-1.557,3.443,0l1.741,4.195 c1.503,3.622,4.305,6.514,7.827,8.077l4.583,2.034c1.504,0.668,1.504,2.855,0,3.523l-4.73,2.1 C27.708,25.62,24.955,28.409,23.426,31.911z"></path>
+                <path fill="#7e57c2" d="M38.423,43.248l-0.493,1.131c-0.361,0.828-1.507,0.828-1.868,0l-0.493-1.131 c-0.879-2.016-2.464-3.621-4.44-4.5l-1.52-0.675c-0.822-0.365-0.822-1.56,0-1.925l1.435-0.638c2.027-0.901,3.64-2.565,4.504-4.65 l0.507-1.222c0.353-0.852,1.531-0.852,1.884,0l0.507,1.222c0.864,2.085,2.477,3.749,4.504,4.65l1.435,0.638 c0.822,0.365,0.822,1.56,0,1.925l-1.52,0.675C40.887,39.627,39.303,41.232,38.423,43.248z"></path>
             </svg>
             <span class="ai-tagger-btn-text">צור תגיות באמצעות AI</span>
-        `;
+        `,
+        LOADING_CONTENT: `
+            <div class="ai-tagger-loading">
+                <div class="ai-tagger-spinner"></div>
+                <span class="ai-tagger-loading-text">מייצר תגיות...</span>
+            </div>
+        `
+    };
 
-        btn.onmouseenter = function () {
-            var span = btn.querySelector('.ai-tagger-btn-text');
-            if (span) span.classList.add('ai-tagger-btn-text-visible');
-        };
-        btn.onmouseleave = function () {
-            var span = btn.querySelector('.ai-tagger-btn-text');
-            if (span) span.classList.remove('ai-tagger-btn-text-visible');
-        };
-
-        btn.onclick = async function () {
-            var contentBox = document.querySelector('.composer textarea.write, .composer [data-write] textarea, .composer textarea');
-            if (!contentBox) {
-                // Fallback: try to find any textarea in composer
-                contentBox = document.querySelector('.composer textarea');
-            }
-            if (!contentBox) {
-                return;
-            }
-            var text = contentBox.value.trim();
-            if (!text) {
-                return;
-            }
-
-            // Send the text to server for tag generation
-            console.log('[AI Tagger] Sending content to server for tag generation');
-            let tags = [];
-            try {
-                const response = await fetch('/api/ai-tagger/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text })
-                });
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to generate tags');
-                }
-
-                console.log('[AI Tagger] Server response:', data);
-                tags = data.tags || [];
-            } catch (err) {
-                console.error('[AI Tagger] Error generating tags:', err);
-                app.alerts.error('Failed to generate tags: ' + err.message);
-                return;
+    /**
+     * Finds the tag input element in the composer
+     * @returns {HTMLElement|null} The tag input element or null if not found
+     */
+    function findTagInput(composerTags) {
+        try {
+            // Primary method: Look for bootstrap-tagsinput
+            const container = document.querySelector(SELECTORS.TAGS_CONTAINER);
+            if (container) {
+                const input = container
+                    .querySelector(SELECTORS.BOOTSTRAP_TAGS_INPUT)
+                    ?.querySelector('input');
+                if (input) return input;
             }
 
-            console.log('[AI Tagger] Generated tags:', tags);
+            // Fallback method 1: Direct input search in composer tags
+            const directInput = composerTags.querySelector('input[type="text"], input, textarea');
+            if (directInput) return directInput;
 
-            tagInput = document.getElementsByClassName("tags-container")[0]
-                .getElementsByClassName("bootstrap-tagsinput")[0]
-                .getElementsByTagName("input")[0];
-            if (tagInput && tags.length) {
-                // Clear the input first
-                tagInput.value = '';
-                tagInput.dispatchEvent(new Event('input', { bubbles: true }));
-                tagInput.dispatchEvent(new Event('focus', { bubbles: true }));
-                tagInput.focus();
-
-                // Simulate typing each tag and pressing comma (or Enter) to trigger tag addition
-                tags.forEach(function (tag, idx) {
-                    tagInput.value += tag + ",";
-                    tagInput.dispatchEvent(new Event('input', { bubbles: true }));
-                });
-
-                // Optionally blur to trigger any finalization
-                tagInput.dispatchEvent(new Event('blur', { bubbles: true }));
-                tagInput.blur();
-            }
-        };
-        // Insert the button as the first child of the div with class "tag-row"
-        var tagRowDiv = composerTags.closest('.tag-row');
-        if (tagRowDiv && !tagRowDiv.querySelector('#ai-generate-tags')) {
-            tagRowDiv.insertBefore(btn, tagRowDiv.firstChild);
-        } else if (composerTags && !composerTags.querySelector('#ai-generate-tags')) {
-            composerTags.insertBefore(btn, composerTags.firstChild);
+            // Fallback method 2: Generic composer input search
+            return document.querySelector('.composer input[data-tag-input], .composer input.tags-input, .composer input[type="text"]');
+        } catch (e) {
+            console.warn('[AI Tagger] Error finding tag input:', e);
+            return null;
         }
     }
 
-    // Use MutationObserver to watch for composer
-    var observer = new MutationObserver(function () {
-        addAutoTagButton();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    /**
+     * Shows loading state on the button
+     * @param {HTMLButtonElement} button - The button element
+     */
+    function showLoadingState(button) {
+        button.innerHTML = TEMPLATES.LOADING_CONTENT;
+        button.disabled = true;
+        button.classList.add('loading');
+    }
 
-    // Also try on composer loaded event
-    $(window).on('action:composer.loaded', function () {
-        addAutoTagButton();
-    });
+    /**
+     * Restores the button to its original state
+     * @param {HTMLButtonElement} button - The button element
+     */
+    function restoreButtonState(button) {
+        button.innerHTML = TEMPLATES.BUTTON_CONTENT;
+        button.disabled = false;
+        button.classList.remove('loading');
+        setupButtonHoverEffects(button);
+    }
+
+    /**
+     * Fetches AI-generated tags from the server
+     * @param {string} text - The post content to generate tags from
+     * @param {HTMLButtonElement} button - The button element to show loading state
+     * @returns {Promise<string[]>} Array of generated tags
+     */
+    async function generateTags(text, button) {
+        showLoadingState(button);
+        console.log('[AI Tagger] Sending content to server for tag generation');
+        
+        try {
+            const response = await fetch(CONFIG.API_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to generate tags');
+            }
+            
+            console.log('[AI Tagger] Server response:', data);
+            return data.tags || [];
+        } finally {
+            restoreButtonState(button);
+        }
+    }
+
+    /**
+     * Applies the generated tags to the tag input field
+     * @param {HTMLInputElement} input - The tag input element
+     * @param {string[]} tags - Array of tags to apply
+     */
+    function applyTagsToInput(input, tags) {
+        if (!input || !tags.length) return;
+
+        // Reset input state
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('focus', { bubbles: true }));
+        input.focus();
+
+        // Add tags
+        input.value = tags.join(',') + ',';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        // Finalize
+        input.dispatchEvent(new Event('blur', { bubbles: true }));
+        input.blur();
+    }
+
+    /**
+     * Sets up hover effects for a button
+     * @param {HTMLButtonElement} button - The button to set up hover effects for
+     */
+    function setupButtonHoverEffects(button) {
+        button.onmouseenter = () => {
+            const span = button.querySelector('.ai-tagger-btn-text');
+            span?.classList.add('ai-tagger-btn-text-visible');
+        };
+        
+        button.onmouseleave = () => {
+            const span = button.querySelector('.ai-tagger-btn-text');
+            span?.classList.remove('ai-tagger-btn-text-visible');
+        };
+    }
+
+    /**
+     * Creates and initializes the AI tag generation button
+     * @returns {HTMLButtonElement} The created button element
+     */
+    function createTagButton() {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = CONFIG.BUTTON_ID;
+        btn.className = CONFIG.BUTTON_CLASS;
+        btn.innerHTML = TEMPLATES.BUTTON_CONTENT;
+
+        return btn;
+    }
+
+    /**
+     * Adds an AI tag generation button to the NodeBB composer interface
+     */
+    function addAutoTagButton() {
+            // Look for the tags container first
+            const composerTags = document.querySelector('.tags-container');
+        if (!composerTags || document.getElementById(CONFIG.BUTTON_ID)) {
+            return;
+        }
+
+            // Look for either bootstrap-tagsinput or a direct input
+            const tagContainer = composerTags.querySelector('.bootstrap-tagsinput');
+            if (!tagContainer) {
+            return;
+        }
+
+        const btn = createTagButton();
+        setupButtonHoverEffects(btn);
+
+
+        btn.onclick = async function() {
+            const contentBox = document.querySelector(SELECTORS.CONTENT_AREA);
+            if (!contentBox) return;
+
+            const text = contentBox.value.trim();
+            if (!text) return;
+
+            try {
+                const tags = await generateTags(text, btn);
+                const currentTagInput = findTagInput(document.querySelector(SELECTORS.COMPOSER_TAGS));
+                applyTagsToInput(currentTagInput, tags);
+            } catch (err) {
+                console.error('[AI Tagger] Error generating tags:', err);
+                app.alerts.error('Failed to generate tags: ' + err.message);
+            }
+        };
+
+            // Try to insert the button in the most appropriate location
+            const tagSpans = tagContainer.querySelectorAll('span.tag');
+            const input = tagContainer.querySelector('input');
+        
+            if (tagSpans.length > 0) {
+                // Insert after the last tag
+                const lastTag = tagSpans[tagSpans.length - 1];
+                lastTag.parentNode.insertBefore(btn, lastTag.nextSibling);
+            } else if (input) {
+                // If no tags exist, insert before the input
+                input.parentNode.insertBefore(btn, input);
+            } else {
+                // Fallback: insert at the beginning
+                tagContainer.insertBefore(btn, tagContainer.firstChild);
+            }
+
+            // Make sure the button is visible
+            btn.style.display = 'inline-flex';
+    }
+
+    /**
+     * Initialize the AI Tagger plugin
+     * Sets up observers and event listeners to add the tag button when needed
+     */
+    function initializeAITagger() {
+        // Watch for dynamic changes in the DOM
+        const observer = new MutationObserver(() => addAutoTagButton());
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Listen for NodeBB composer loaded event
+        $(window).on('action:composer.loaded', addAutoTagButton);
+    }
+
+    // Start the plugin
+    initializeAITagger();
 })();

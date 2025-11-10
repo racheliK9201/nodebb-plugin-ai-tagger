@@ -1,23 +1,66 @@
+.bootstrap-tagsinput {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+
+    .ai-tagger-btn {
+        margin: 0 !important;
+        position: relative !important;
+        order: 1;
+        flex: 0 0 auto;
+    }
+    
+    input {
+        order: 2;
+        margin: 0 !important;
+    }
+    
+    .tag {
+        order: 0;
+        margin: 0 4px 0 0 !important;
+    }
+}
+
 .ai-tagger-btn {
-    margin-left: 4px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
-    padding: 2px 4px;
-    height: 38px;
-    width: 38px;
+    padding: 4px;
+    height: 28px;
+    width: 28px;
     min-width: unset;
     min-height: unset;
     vertical-align: middle;
     box-shadow: none;
     position: relative;
     cursor: pointer;
+    margin: 0;
+    align-self: center;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    &.loading {
+        cursor: wait;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
+    }
+
+    &:disabled {
+        opacity: 0.7;
+    }
 }
 
 .ai-tagger-btn-icon {
-    vertical-align: middle;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
+    display: block;
 }
 
 .ai-tagger-btn-text {
@@ -40,4 +83,47 @@
 
 .ai-tagger-btn-text-visible {
     display: inline-block;
+}
+
+// Loading animation styles
+.ai-tagger-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+.ai-tagger-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(33, 150, 243, 0.3);
+    border-radius: 50%;
+    border-top-color: #2196f3;
+    animation: ai-tagger-spin 0.8s linear infinite;
+}
+
+.ai-tagger-loading-text {
+    position: absolute;
+    display: none;
+    margin-left: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    background: #fff;
+    color: #222;
+    border-radius: 4px;
+    padding: 2px 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    z-index: 1000;
+    left: 110%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.loading:hover .ai-tagger-loading-text {
+    display: block;
+}
+
+@keyframes ai-tagger-spin {
+    to { transform: rotate(360deg); }
 }
