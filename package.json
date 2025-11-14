@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-ai-tagger",
-  "version": "0.6.6",
+  "version": "0.6.8",
   "description": "NodeBB plugin that uses AI to tag posts",
   "author": "RacheliB",
   "main": "library.js",
@@ -12,7 +12,6 @@
     "nodebb",
     "plugin",
     "ai-tagger",
-    "shell"
   ],
   "husky": {
     "hooks": {
@@ -28,7 +27,7 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nodebb/nodebb-plugin-ai-tagger/issues"
+    "url": "https://github.com/racheliK9201/nodebb-plugin-ai-tagger/issues"
   },
   "readmeFilename": "README.md",
   "nbbpm": {

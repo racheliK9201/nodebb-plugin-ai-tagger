@@ -8,7 +8,7 @@ const controllers = require('./lib/controllers');
 
 const routeHelpers = require.main.require('./src/routes/helpers');
 
-const DEFAULT_PROMPT = 'You are a tags generator for post that should be indexed using the tags. Take the post and create between 1 to 3 tags that represents the content of the post. Each tag must be 3-15 characters long. Return only the tags with no other prefix, suffix or anything else. Each tag may have more that one word. use comma to separate between tags.';
+const DEFAULT_PROMPT = 'צור בין תגית אחת לחמש תגיות המתארות במדויק את נושא הפוסט. כל תגית צריכה להיות באורך 3 עד 15 תווים ויכולה לכלול יותר ממילה אחת. התגיות צריכות להיות רלוונטיות לנושא המרכזי, שימושיות לחיפוש בגוגל, וללא מילות קישור מיותרות (כמו "של", "עם", "על"). בחר רק את המילים החשובות ביותר שמייצגות את נושא הפוסט באופן ברור וספציפי. החזר רק את רשימת התגיות, מופרדות בפסיק, ללא טקסט נוסף.';
 
 const plugin = {
     settings: {
