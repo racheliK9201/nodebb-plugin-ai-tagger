@@ -11,7 +11,7 @@
   "keywords": [
     "nodebb",
     "plugin",
-    "ai-tagger",
+    "ai-tagger"
   ],
   "husky": {
     "hooks": {
